@@ -13,7 +13,7 @@ var progname = filepath.Base(os.Args[0])
 
 func main() {
 	abs := flag.BoolP("absolute-path", "a", false, "Return absolute path")
-	cont := flag.BoolP("containing-dir", "c", false, "Return the directory containing [filename]")
+	cont := flag.BoolP("containing-dir", "c", false, "Return path to the directory containing [filename]")
 	dir := flag.BoolP("find-directory", "d", false, "Search for a directory instead of a file")
 	argroot := flag.StringP("root", "r", ".", "The root directory of the search")
 
@@ -31,7 +31,7 @@ Flags:
 
 	args := flag.Args()
 	if len(args) != 1 {
-		fmt.Println("qff takes one postional arg")
+		flag.Usage()
 		return
 	}
 
