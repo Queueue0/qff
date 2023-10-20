@@ -2,6 +2,10 @@
 
 This is just a basic file/directory finder I made.
 
+## Installation
+`go install github.com/Queueue0/qff/cmd/qff@latest`
+
+## Usage
 Output of `qff --help`:
 
 ```
