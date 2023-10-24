@@ -51,7 +51,7 @@ Flags:
 		log.Fatal(err)
 	}
 
-	result := "Not Found"
+	result := ""
 	err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			fmt.Println(err)
@@ -70,7 +70,11 @@ Flags:
 		return nil
 	})
 
-	if result != "Not Found" && !*abs {
+	if result == "" {
+		os.Exit(1)
+	}
+
+	if !*abs {
 		result, err = filepath.Rel(root, result)
 		if err != nil {
 			log.Fatal(err)
