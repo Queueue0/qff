@@ -16,6 +16,7 @@ func main() {
 	cont := flag.BoolP("containing-dir", "c", false, "Return path to the directory containing [filename]")
 	dir := flag.BoolP("find-directory", "d", false, "Search for a directory instead of a file")
 	argroot := flag.StringP("root", "r", ".", "The root directory of the search")
+	help := flag.BoolP("help", "h", false, "Displays usage information")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Find the path to the specified file
@@ -28,6 +29,11 @@ Flags:
 	}
 
 	flag.Parse()
+
+	if *help {
+		flag.Usage()
+		return
+	}
 
 	args := flag.Args()
 	if len(args) != 1 {
