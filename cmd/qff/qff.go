@@ -30,6 +30,10 @@ func findTarget(target, root string, dir, cont, abs bool) (string, error) {
 		return "", err
 	}
 
+	if result == "" {
+		return result, nil
+	}
+
 	if !abs {
 		result, err = filepath.Rel(root, result)
 		if err != nil {
@@ -62,6 +66,10 @@ func findAllTargets(target, root string, dir, cont, abs bool) ([]string, error) 
 
 	if err != nil {
 		return nil, err
+	}
+
+	if len(results) == 0 {
+		return results, nil
 	}
 
 	if !abs {
