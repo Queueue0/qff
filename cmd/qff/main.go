@@ -15,7 +15,8 @@ func main() {
 	abs := flag.BoolP("absolute-path", "a", false, "Return absolute path")
 	cont := flag.BoolP("containing-dir", "c", false, "Return path to the directory containing [filename]")
 	dir := flag.BoolP("find-directory", "d", false, "Search for a directory instead of a file")
-	argroot := flag.StringP("root", "r", ".", "The root directory of the search")
+	recurse := flag.BoolP("recursive", "r", false, "Return all files with given name")
+	argroot := flag.String("root", ".", "The root directory of the search")
 	help := flag.BoolP("help", "h", false, "Displays usage information")
 
 	flag.Usage = func() {
@@ -43,49 +44,22 @@ Flags:
 
 	target := args[0]
 
-	root := *argroot
-	var err error
-	if root == "." {
-		root, err = os.Getwd()
+	if !*recurse {
+		result, err := findTarget(target, *argroot, *dir, *cont, *abs)
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
 
-	root, err = filepath.EvalSymlinks(root)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	result := ""
-	err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			fmt.Println(err)
-			return nil
-		}
-
-		if (d.IsDir() == *dir) && d.Name() == target {
-			if !*cont {
-				result = path
-			} else {
-				result = filepath.Dir(path)
-			}
-			return filepath.SkipAll
-		}
-
-		return nil
-	})
-
-	if result == "" {
-		os.Exit(1)
-	}
-
-	if !*abs {
-		result, err = filepath.Rel(root, result)
+		fmt.Println(result)
+	} else {
+		results, err := findAllTargets(target, *argroot, *dir, *cont, *abs)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		for _, r := range results {
+			fmt.Println(r)
+		}
 	}
 
-	fmt.Println(result)
 }
