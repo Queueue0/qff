@@ -1,15 +1,50 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
 
-func findTarget(target, root string, dir, cont, abs bool) (string, error) {
-	root, err := sanitizeRoot(root)
+func findAndPrintTarget(f flags) {
+	target := f.args[0]
 
+	root, err := sanitizeRoot(f.root)
+
+	if err != nil {
+		printErrorAndExit(err)
+	}
+
+	var results []string
+	if !f.recurse {
+		result, err := findTarget(target, root, f.dir, f.cont)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
+		results = append(results, result)
+	} else {
+		results, err = findAllTargets(target, root, f.dir, f.cont)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+	}
+
+	if !f.abs {
+		results, err = makeRelative(root, results...)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+	}
+
+	for _, r := range results {
+		fmt.Println(r)
+	}
+}
+
+func findTarget(target, root string, dir, cont bool) (string, error) {
 	result := ""
-	err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -30,25 +65,12 @@ func findTarget(target, root string, dir, cont, abs bool) (string, error) {
 		return "", err
 	}
 
-	if result == "" {
-		return result, nil
-	}
-
-	if !abs {
-		result, err = filepath.Rel(root, result)
-		if err != nil {
-			return "", err
-		}
-	}
-
 	return result, nil
 }
 
-func findAllTargets(target, root string, dir, cont, abs bool) ([]string, error) {
-	root, err := sanitizeRoot(root)
-
+func findAllTargets(target, root string, dir, cont bool) ([]string, error) {
 	var results []string
-	err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -66,19 +88,6 @@ func findAllTargets(target, root string, dir, cont, abs bool) ([]string, error) 
 
 	if err != nil {
 		return nil, err
-	}
-
-	if len(results) == 0 {
-		return results, nil
-	}
-
-	if !abs {
-		for i, result := range results {
-			results[i], err = filepath.Rel(root, result)
-		}
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return results, nil
@@ -99,4 +108,24 @@ func sanitizeRoot(root string) (string, error) {
 	}
 
 	return root, nil
+}
+
+func makeRelative(root string, args ...string) ([]string, error) {
+	var err error
+	for i, arg := range args {
+		if len(arg) != 0 {
+			args[i], err = filepath.Rel(root, arg)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return args, nil
+}
+
+func printErrorAndExit(err error) {
+	fmt.Fprintf(os.Stderr, "%v\n", err)
+	os.Exit(1)
 }
