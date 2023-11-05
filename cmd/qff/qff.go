@@ -211,6 +211,7 @@ func makeRelative(root string, args ...string) ([]string, error) {
 	for i, arg := range args {
 		if len(arg) != 0 {
 			args[i], err = filepath.Rel(root, arg)
+			args[i] = "./" + args[i]
 		}
 
 		if err != nil {
