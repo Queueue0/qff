@@ -46,7 +46,9 @@ func findAndPrintTarget(f flags) {
 
 	if f.dir || f.cont {
 		for i := range results {
-			results[i] += "/"
+			if results[i] != "" {
+				results[i] += "/"
+			}
 		}
 	}
 
