@@ -104,10 +104,15 @@ func findConcurrently(target, root, origRoot string, dir, cont bool) error {
 			}
 
 			if d.IsDir() == dir && strings.HasSuffix(path, "/"+target) && path != origRoot {
+				absPath, err := filepath.Abs(path)
+				if err != nil {
+					return err
+				}
+
 				if !cont {
-					s = path
+					s = absPath
 				} else {
-					s = filepath.Dir(path)
+					s = filepath.Dir(absPath)
 				}
 
 				resultChan <- s
@@ -187,10 +192,15 @@ func findAllConcurrently(target, root string, dir, cont bool) error {
 		}
 
 		if d.IsDir() == dir && strings.HasSuffix(path, "/"+target) {
+			absPath, err := filepath.Abs(path)
+			if err != nil {
+				return err
+			}
+
 			if !cont {
-				s = path
+				s = absPath
 			} else {
-				s = filepath.Dir(path)
+				s = filepath.Dir(absPath)
 			}
 
 			resultChan <- s
@@ -224,6 +234,11 @@ func sanitizeRoot(root string) (string, error) {
 	}
 
 	root, err = filepath.EvalSymlinks(root)
+	if err != nil {
+		return "", err
+	}
+
+	root, err = filepath.Abs(root)
 	if err != nil {
 		return "", err
 	}
