@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -51,7 +52,7 @@ var quit = make(chan bool, 1)
 
 func findTarget(target, root string, dir, cont bool) (string, error) {
 	wg.Add(1)
-	go findConcurrently(target, root, dir, cont)
+	go findConcurrently(target, root, root, dir, cont)
 
 	go func() {
 		wg.Wait()
@@ -71,10 +72,13 @@ func findTarget(target, root string, dir, cont bool) (string, error) {
 	}
 	sort.Strings(results)
 
-	return results[0], nil
+	if len(results) > 0 {
+		return results[0], nil
+	}
+	return "", nil
 }
 
-func findConcurrently(target, root string, dir, cont bool) error {
+func findConcurrently(target, root, origRoot string, dir, cont bool) error {
 	defer wg.Done()
 
 	var s string
@@ -87,7 +91,7 @@ func findConcurrently(target, root string, dir, cont bool) error {
 				return err
 			}
 
-			if d.IsDir() == dir && d.Name() == target {
+			if d.IsDir() == dir && strings.HasSuffix(path, target) && path != origRoot {
 				if !cont {
 					s = path
 				} else {
@@ -102,7 +106,7 @@ func findConcurrently(target, root string, dir, cont bool) error {
 
 			if d.IsDir() && path != root {
 				wg.Add(1)
-				go findConcurrently(target, path, dir, cont)
+				go findConcurrently(target, path, origRoot, dir, cont)
 				return filepath.SkipDir
 			}
 
@@ -161,7 +165,7 @@ func findAllConcurrently(target, root string, dir, cont bool) error {
 			return err
 		}
 
-		if d.IsDir() == dir && d.Name() == target {
+		if d.IsDir() == dir && strings.HasSuffix(path, target) {
 			if !cont {
 				s = path
 			} else {
