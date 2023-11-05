@@ -12,6 +12,10 @@ import (
 func findAndPrintTarget(f flags) {
 	target := f.args[0]
 
+	if strings.HasSuffix(target, "/") {
+		target = strings.TrimSuffix(target, "/")
+	}
+
 	root, err := sanitizeRoot(f.root)
 
 	if err != nil {
@@ -37,6 +41,12 @@ func findAndPrintTarget(f flags) {
 		results, err = makeRelative(f.root, results...)
 		if err != nil {
 			printErrorAndExit(err)
+		}
+	}
+
+	if f.dir || f.cont {
+		for i := range results {
+			results[i] += "/"
 		}
 	}
 
@@ -224,10 +234,6 @@ func makeRelative(root string, args ...string) ([]string, error) {
 	prefix := root + "/"
 	if strings.HasSuffix(root, "/") {
 		prefix = root
-	}
-	home, err := os.UserHomeDir()
-	if root == home && err == nil {
-		prefix = "~/"
 	}
 	root, _ = sanitizeRoot(root)
 	for i, arg := range args {
