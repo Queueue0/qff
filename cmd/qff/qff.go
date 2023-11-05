@@ -91,7 +91,7 @@ func findConcurrently(target, root, origRoot string, dir, cont bool) error {
 				return err
 			}
 
-			if d.IsDir() == dir && strings.HasSuffix(path, target) && path != origRoot {
+			if d.IsDir() == dir && strings.HasSuffix(path, "/"+target) && path != origRoot {
 				if !cont {
 					s = path
 				} else {
@@ -131,18 +131,27 @@ func findAllTargets(target, root string, dir, cont bool) ([]string, error) {
 	wg.Add(1)
 	go findAllConcurrently(target, root, dir, cont)
 
-	var results []string
+	resultSet := make(map[string]struct{})
 	go func() {
 		for s := range resultChan {
-			results = append(results, s)
+			resultSet[s] = struct{}{}
 		}
 	}()
 
+	var results []string
 	go func() {
 		wg.Wait()
 		close(resultChan)
 		close(errChan)
 		close(quit)
+
+		results = make([]string, len(resultSet))
+
+		i := 0
+		for k := range resultSet {
+			results[i] = k
+			i++
+		}
 	}()
 
 	for err := range errChan {
@@ -165,7 +174,7 @@ func findAllConcurrently(target, root string, dir, cont bool) error {
 			return err
 		}
 
-		if d.IsDir() == dir && strings.HasSuffix(path, target) {
+		if d.IsDir() == dir && strings.HasSuffix(path, "/"+target) {
 			if !cont {
 				s = path
 			} else {
