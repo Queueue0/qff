@@ -34,7 +34,7 @@ func findAndPrintTarget(f flags) {
 	}
 
 	if !f.abs {
-		results, err = makeRelative(root, results...)
+		results, err = makeRelative(f.root, results...)
 		if err != nil {
 			printErrorAndExit(err)
 		}
@@ -212,10 +212,19 @@ func sanitizeRoot(root string) (string, error) {
 
 func makeRelative(root string, args ...string) ([]string, error) {
 	var err error
+	prefix := root + "/"
+	if strings.HasSuffix(root, "/") {
+		prefix = root
+	}
+	home, err := os.UserHomeDir()
+	if root == home && err == nil {
+		prefix = "~/"
+	}
+	root, _ = sanitizeRoot(root)
 	for i, arg := range args {
 		if len(arg) != 0 {
 			args[i], err = filepath.Rel(root, arg)
-			args[i] = "./" + args[i]
+			args[i] = prefix + args[i]
 		}
 
 		if err != nil {
