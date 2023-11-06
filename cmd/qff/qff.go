@@ -103,7 +103,7 @@ func findConcurrently(target, root, origRoot string, dir, cont bool) error {
 				return err
 			}
 
-			if d.IsDir() == dir && strings.HasSuffix(path, "/"+target) && path != origRoot {
+			if d.IsDir() == dir && match("/"+target, path) && path != origRoot {
 				absPath, err := filepath.Abs(path)
 				if err != nil {
 					return err
@@ -191,7 +191,7 @@ func findAllConcurrently(target, root string, dir, cont bool) error {
 			return err
 		}
 
-		if d.IsDir() == dir && strings.HasSuffix(path, "/"+target) {
+		if d.IsDir() == dir && match("/"+target, path) {
 			absPath, err := filepath.Abs(path)
 			if err != nil {
 				return err
@@ -222,52 +222,4 @@ func findAllConcurrently(target, root string, dir, cont bool) error {
 	}
 
 	return nil
-}
-
-func sanitizeRoot(root string) (string, error) {
-	var err error
-	if root == "." {
-		root, err = os.Getwd()
-		if err != nil {
-			return "", err
-		}
-	}
-
-	root, err = filepath.EvalSymlinks(root)
-	if err != nil {
-		return "", err
-	}
-
-	root, err = filepath.Abs(root)
-	if err != nil {
-		return "", err
-	}
-
-	return root, nil
-}
-
-func makeRelative(root string, args ...string) ([]string, error) {
-	var err error
-	prefix := root + "/"
-	if strings.HasSuffix(root, "/") {
-		prefix = root
-	}
-	root, _ = sanitizeRoot(root)
-	for i, arg := range args {
-		if len(arg) != 0 {
-			args[i], err = filepath.Rel(root, arg)
-			args[i] = prefix + args[i]
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return args, nil
-}
-
-func printErrorAndExit(err error) {
-	fmt.Fprintf(os.Stderr, "%v\n", err)
-	os.Exit(1)
 }
