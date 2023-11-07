@@ -12,6 +12,19 @@ import (
 func findAndPrintTarget(f flags) {
 	target := f.args[0]
 
+	if strings.HasPrefix(target, ".") {
+		prefix, err := os.Getwd()
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
+		target = prefix + strings.TrimPrefix(target, ".")
+	}
+
+	if !strings.HasPrefix(target, "/") {
+		target = "/" + target
+	}
+
 	if strings.HasSuffix(target, "/") {
 		target = strings.TrimSuffix(target, "/")
 	}
@@ -103,7 +116,7 @@ func findConcurrently(target, root, origRoot string, dir, cont bool) error {
 				return err
 			}
 
-			if d.IsDir() == dir && match("/"+target, path) && path != origRoot {
+			if d.IsDir() == dir && match(target, path) && path != origRoot {
 				absPath, err := filepath.Abs(path)
 				if err != nil {
 					return err
@@ -197,7 +210,7 @@ func findAllConcurrently(target, root string, dir, cont bool) error {
 			return err
 		}
 
-		if d.IsDir() == dir && match("/"+target, path) {
+		if d.IsDir() == dir && match(target, path) {
 			absPath, err := filepath.Abs(path)
 			if err != nil {
 				return err
