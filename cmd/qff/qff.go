@@ -148,28 +148,34 @@ func findAllTargets(target, root string, dir, cont bool) ([]string, error) {
 	wg.Add(1)
 	go findAllConcurrently(target, root, dir, cont)
 
+	var closed sync.WaitGroup
 	resultSet := make(map[string]struct{})
+	closed.Add(1)
 	go func() {
 		for s := range resultChan {
 			resultSet[s] = struct{}{}
 		}
+		closed.Done()
 	}()
 
-	var results []string
+	closed.Add(1)
 	go func() {
 		wg.Wait()
 		close(resultChan)
 		close(errChan)
 		close(quit)
-
-		results = make([]string, len(resultSet))
-
-		i := 0
-		for k := range resultSet {
-			results[i] = k
-			i++
-		}
+		closed.Done()
 	}()
+
+	closed.Wait()
+
+	results := make([]string, len(resultSet))
+
+	i := 0
+	for k := range resultSet {
+		results[i] = k
+		i++
+	}
 
 	for err := range errChan {
 		if err != nil {
